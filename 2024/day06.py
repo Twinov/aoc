@@ -1,6 +1,7 @@
 import sys
 
 def solve(lines):
+    lines = [line.strip() for line in lines]
     p1, p2 = 0, 0
 
     directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
@@ -34,7 +35,6 @@ def solve(lines):
                 start_pos = (r, c)
 
     move(start_pos[0], start_pos[1], 0)
-    p1 = len(visited_spaces) - 1 # there's an extra space counted in my real input for some reason...
     
     # part 1 visualization
     covered_grid = [['.'] * len(lines[0]) for _ in range(len(lines))]
@@ -42,8 +42,10 @@ def solve(lines):
         for c in range(len(lines[r])):
             if lines[r][c] == '^':
                 covered_grid[r][c] = '^'
+                p1 += 1
             elif (r, c) in visited_spaces:
                 covered_grid[r][c] = 'X'
+                p1 += 1
             elif lines[r][c] == '#':
                 covered_grid[r][c] = '#'
     
