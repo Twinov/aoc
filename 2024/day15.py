@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 def solve(lines, example=True):
     lines = [line.strip() for line in lines]
     p1, p2 = 0, 0
