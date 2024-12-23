@@ -43,7 +43,7 @@ def solve(lines, example=True):
     keypad_layouts[KEYPAD_TYPE_CONTROLLER].buttons['>'] = Button(up='A', left='v')
     
     keypad_cache = {}
-    def bfs(keypad_layout_id, start, end):
+    def get_key_path(keypad_layout_id, start, end):
         cache_key = (keypad_layout_id, start, end)
         if cache_key in keypad_cache:
             return keypad_cache[cache_key]
@@ -87,7 +87,7 @@ def solve(lines, example=True):
 
             prev_combos = [bpc for bpc in button_presses_combos]
             next_bpcs = []
-            for new_combo in bfs(keypad_layout_id, curr_button, next_button):
+            for new_combo in get_key_path(keypad_layout_id, curr_button, next_button):
                 for pc in prev_combos:
                     next_bpcs.append(pc + new_combo + 'A')
 
@@ -100,10 +100,38 @@ def solve(lines, example=True):
 
         presses_needed_cache[cache_key] = button_presses_combos
         return presses_needed_cache[cache_key]
+    
+    shortest_sequence_cache = {}
+    def get_shortest_sequence_level_wise(button_sequence, depth):
+        if depth == 0:
+            return len(button_sequence)
+
+        cache_key = (button_sequence, depth)
+        if cache_key in shortest_sequence_cache:
+            return shortest_sequence_cache[cache_key]
+
+        split_sequences, curr_sequence = [], []
+        for c in button_sequence:
+            curr_sequence.append(c)
+            if c == 'A':
+                split_sequences.append(''.join(curr_sequence))
+                curr_sequence = []
+
+        total_button_presses = 0
+        for seq in split_sequences:
+            curr_sequence_min = float('inf')
+            possible_paths = get_presses_needed(seq, KEYPAD_TYPE_CONTROLLER)
+            for path in possible_paths:
+                curr_sequence_min = min(curr_sequence_min, get_shortest_sequence_level_wise(path, depth-1))
+            total_button_presses += curr_sequence_min
+        
+        shortest_sequence_cache[cache_key] = total_button_presses
+        return shortest_sequence_cache[cache_key]
         
     for code in lines:
         numpad_button_presses_combinations = get_presses_needed(code, KEYPAD_TYPE_NUMPAD)
         
+        # part 1, brute force but it prints out the sequence
         robot_button_presses_combinations = set()
         for numpad_combo in numpad_button_presses_combinations:
             for robot_combo in get_presses_needed(numpad_combo, KEYPAD_TYPE_CONTROLLER):
@@ -117,16 +145,23 @@ def solve(lines, example=True):
                     min_combo = (my_combo, robot_combo, numpad_combo, code)
                 my_button_presses_combinations.add(my_combo)
 
+        # part 2, only get the length
+        min_len_25_deep = float('inf')
+        for numpad_combo in numpad_button_presses_combinations:
+            min_len_25_deep = min(min_len_25_deep, get_shortest_sequence_level_wise(numpad_combo, 25))
+
         numeric_part_of_code = []
         for char in code:
             if char in '1234567890':
                 numeric_part_of_code.append(char)
-        
-        p1 += (int(''.join(numeric_part_of_code)) * len(min_combo[0]))
-        print(code, len(min_combo[0]), min_combo)
+        numeric_part_of_code = int(''.join(numeric_part_of_code))
+        p1 += numeric_part_of_code * len(min_combo[0])
+        p2 += numeric_part_of_code * min_len_25_deep
+
+        print(code, len(min_combo[0]), min_combo, min_len_25_deep)
             
     print('part 1:', p1)
-    print('part 2:', 'lol gave up')
+    print('part 2:', p2)
 
 example_input = open('example_input.txt', 'r').readlines()
 actual_input = open('input.txt', 'r').readlines()
